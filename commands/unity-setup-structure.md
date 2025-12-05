@@ -4,7 +4,7 @@
 Tạo cấu trúc thư mục Unity theo chuẩn `_Core/_Features/_Game/Plugins` và sinh `asmdef` mẫu, chạy từ shell (PowerShell/Bash) — không cần mở Unity.
 
 ## Targets
-- Folders theo `rules/00_unity-project-overview.mdc`
+- Folders theo `rules/00_unity-project-overview.md`
 - `asmdef`:
   - `Assets/_Core/_Core.asmdef` (no references)
   - `Assets/_Features/_Features.asmdef` (ref `_Core`)

@@ -31,37 +31,37 @@ Dự án Unity sử dụng kiến trúc component-based với các quy tắc chu
 
 ## 📋 Danh mục rule files
 
-### 1. Unity Script Standards (`unity-script-standards.mdc`)
+### 1. Unity Script Standards (`unity-script-standards.md`)
 - Chuẩn hóa viết C# scripts cho Unity
 - Naming conventions, code structure
 - MonoBehaviour patterns và best practices
 - Performance optimization guidelines
 
-### 2. Unity Asset Standards (`unity-asset-standards.mdc`)
+### 2. Unity Asset Standards (`unity-asset-standards.md`)
 - Quản lý assets (textures, models, audio)
 - Import settings và optimization
 - Asset organization và naming
 - Memory management
 
-### 3. Unity Performance Standards (`unity-performance-standards.mdc`)
+### 3. Unity Performance Standards (`unity-performance-standards.md`)
 - Performance profiling và optimization
 - Memory management
 - Draw call optimization
 - Mobile performance guidelines
 
-### 4. Unity Testing Standards (`unity-testing-standards.mdc`)
+### 4. Unity Testing Standards (`unity-testing-standards.md`)
 - Unit testing với Unity Test Framework
 - Integration testing
 - Performance testing
 - Automated testing workflows
 
-### 5. Unity Build Standards (`unity-build-standards.mdc`)
+### 5. Unity Build Standards (`unity-build-standards.md`)
 - Build configuration cho các platforms
 - Build automation và CI/CD
 - Platform-specific optimizations
 - Distribution workflows
 
-### 6. Unity Debug Standards (`unity-debug-standards.mdc`)
+### 6. Unity Debug Standards (`unity-debug-standards.md`)
 - Debug logging system với Interface pattern
 - Define symbols để control debug trong build
 - Tag format và naming conventions
@@ -146,12 +146,12 @@ Assets/
 - **Audio**: snake_case (jump_sound, background_music)
 
 ## 📚 Cách sử dụng
-1. Phát triển scripts: xem `unity-script-standards.mdc`
-2. Quản lý assets: xem `unity-asset-standards.mdc`
-3. Tối ưu performance: xem `unity-performance-standards.mdc`
-4. Testing: xem `unity-testing-standards.mdc`
-5. Build và deploy: xem `unity-build-standards.mdc`
-6. Debug và logging: xem `unity-debug-standards.mdc`
+1. Phát triển scripts: xem `unity-script-standards.md`
+2. Quản lý assets: xem `unity-asset-standards.md`
+3. Tối ưu performance: xem `unity-performance-standards.md`
+4. Testing: xem `unity-testing-standards.md`
+5. Build và deploy: xem `unity-build-standards.md`
+6. Debug và logging: xem `unity-debug-standards.md`
 
 ## 🔄 Cập nhật quy tắc
 1. Sửa file rule tương ứng
