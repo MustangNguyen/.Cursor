@@ -1,0 +1,701 @@
+```
+---
+id: "rule-no-fallback-game-logic"
+name: "Cấm Fallback Logic trong Game Code"
+description: "Nguyên tắc không thêm fallback logic khi fix, add feature hoặc refactor. Cứ để nó lỗi rồi tìm cách fix chứ không được che giấu lỗi bằng fallback."
+version: "1.0.0"
+alwaysApply: true
+enabled: true
+priority: 21
+tags: ["unity", "game-logic", "anti-pattern", "code-quality"]
+globs: ["**/*.cs"]
+excludeGlobs: ["**/Tests/**", "**/Editor/**", "**/Plugins/**"]
+scope: "project"
+services: ["*"]
+appliesTo: ["code", "chat"]
+match: ""
+variables: {}
+rules: []
+examples: []
+references: []
+commands: []
+owners: ["devgo2003"]
+createdAt: "2025-12-15T04:32:04Z"
+updatedAt: "2025-12-15T04:32:04Z"
+notes: "Cấm thêm fallback logic để che giấu lỗi. Cứ để nó fail rõ ràng rồi fix gốc rễ."
+language: vi
+---
+
+# [object Object]ấm Fallback Logic trong Game Code
+
+## [object Object]ổng quan
+
+**Nguyên tắc vàng**: Khi fix bugs, add features, hoặc refactor code, **TUYỆT ĐỐI KHÔNG được thêm fallback logic để che giấu lỗi**. Cứ để nó lỗi rõ ràng, sau đó tìm cách fix gốc rễ.
+
+### Tại sao cấm fallback?
+
+1. **Che giấu lỗi thực sự** → Khó debug sau này
+2. **Logic trở nên phức tạp** → Khó hiểu, khó maintain
+3. **Dữ liệu không nhất quán** → Gây lỗi cascade
+4. **Khó phát hiện root cause** → Mất thời gian troubleshooting
+5. **Code smell** → Dấu hiệu thiết kế yếu
+
+---
+
+## ❌ Các mẫu Fallback CẤMI (Cấm tuyệt đối)
+
+### 1. Fallback với Default Values
+
+```csharp
+// ❌ CẤMI - Fallback với default value
+public class PlayerController : MonoBehaviour
+{
+    private float moveSpeed = 5f; // Default fallback
+    
+    public void SetMoveSpeed(float speed)
+    {
+        // Nếu speed invalid, dùng default
+        moveSpeed = speed > 0 ? speed : 5f;  // ← CẤMI
+    }
+}
+
+// ✅ ĐÚNG - Fail fast, validate input
+public class PlayerController : MonoBehaviour
+{
+    private float moveSpeed;
+    
+    public void SetMoveSpeed(float speed)
+    {
+        if (speed <= 0)
+        {
+            throw new System.ArgumentException($"Move speed must be > 0, got {speed}");
+        }
+        moveSpeed = speed;
+    }
+}
+```
+
+### 2. Fallback với Null Coalescing trong Logic
+
+```csharp
+// ❌ CẤMI - Fallback khi reference null
+public class InventorySystem : MonoBehaviour
+{
+    private ItemDatabase itemDatabase;
+    
+    public Item GetItem(int itemId)
+    {
+        // Fallback: tạo item mặc định nếu không tìm thấy
+        return itemDatabase?.GetItem(itemId) ?? CreateDefaultItem();  // ← CẤMI
+    }
+    
+    private Item CreateDefaultItem()
+    {
+        return new Item { id = -1, name = "Unknown" };
+    }
+}
+
+// ✅ ĐÚNG - Fail fast, log error rõ ràng
+public class InventorySystem : MonoBehaviour
+{
+    private ItemDatabase itemDatabase;
+    
+    public Item GetItem(int itemId)
+    {
+        if (itemDatabase == null)
+        {
+            throw new System.NullReferenceException("ItemDatabase not initialized");
+        }
+        
+        Item item = itemDatabase.GetItem(itemId);
+        if (item == null)
+        {
+            throw new System.InvalidOperationException($"Item {itemId} not found in database");
+        }
+        
+        return item;
+    }
+}
+```
+
+### 3. Fallback với Try-Catch Silent
+
+```csharp
+// ❌ CẤMI - Catch exception rồi fallback
+public class GameSaver : MonoBehaviour
+{
+    public void SaveGame(string savePath)
+    {
+        try
+        {
+            // Save logic
+            File.WriteAllText(savePath, gameData);
+        }
+        catch (System.Exception ex)
+        {
+            // Fallback: không save, cứ chơi tiếp
+            Debug.LogWarning("Save failed, continuing without save...");  // ← CẤMI
+        }
+    }
+}
+
+// ✅ ĐÚNG - Fail fast, throw exception
+public class GameSaver : MonoBehaviour
+{
+    public void SaveGame(string savePath)
+    {
+        try
+        {
+            File.WriteAllText(savePath, gameData);
+        }
+        catch (System.IO.IOException ex)
+        {
+            throw new System.InvalidOperationException($"Failed to save game to {savePath}", ex);
+        }
+        catch (System.Exception ex)
+        {
+            throw new System.InvalidOperationException("Unexpected error while saving game", ex);
+        }
+    }
+}
+```
+
+### 4. Fallback với Empty/Default Collections
+
+```csharp
+// ❌ CẤMI - Fallback với empty list
+public class EnemySpawner : MonoBehaviour
+{
+    private List<EnemyData> enemyWaves;
+    
+    public void StartWave(int waveIndex)
+    {
+        // Fallback: nếu wave không tồn tại, spawn empty
+        List<EnemyData> wave = waveIndex < enemyWaves.Count 
+            ? enemyWaves[waveIndex] 
+            : new List<EnemyData>();  // ← CẤMI
+        
+        SpawnEnemies(wave);
+    }
+}
+
+// ✅ ĐÚNG - Fail fast, validate wave index
+public class EnemySpawner : MonoBehaviour
+{
+    private List<EnemyData> enemyWaves;
+    
+    public void StartWave(int waveIndex)
+    {
+        if (waveIndex < 0 || waveIndex >= enemyWaves.Count)
+        {
+            throw new System.IndexOutOfRangeException(
+                $"Wave {waveIndex} does not exist. Available waves: 0-{enemyWaves.Count - 1}"
+            );
+        }
+        
+        SpawnEnemies(enemyWaves[waveIndex]);
+    }
+}
+```
+
+### 5. Fallback với Conditional Execution
+
+```csharp
+// ❌ CẤMI - Fallback: bỏ qua logic nếu điều kiện không đúng
+public class LevelManager : MonoBehaviour
+{
+    private LevelData currentLevel;
+    
+    public void LoadLevel(int levelId)
+    {
+        LevelData level = GetLevelData(levelId);
+        
+        // Fallback: nếu level null, chỉ log warning rồi return
+        if (level == null)
+        {
+            Debug.LogWarning($"Level {levelId} not found, skipping load");  // ← CẤMI
+            return;
+        }
+        
+        currentLevel = level;
+    }
+}
+
+// ✅ ĐÚNG - Fail fast, throw exception
+public class LevelManager : MonoBehaviour
+{
+    private LevelData currentLevel;
+    
+    public void LoadLevel(int levelId)
+    {
+        LevelData level = GetLevelData(levelId);
+        
+        if (level == null)
+        {
+            throw new System.InvalidOperationException(
+                $"Level {levelId} not found. Check LevelDatabase configuration."
+            );
+        }
+        
+        currentLevel = level;
+    }
+}
+```
+
+### 6. Fallback với Lazy Initialization
+
+```csharp
+// ❌ CẤMI - Fallback: lazy init nếu chưa khởi tạo
+public class AudioManager : MonoBehaviour
+{
+    private AudioSource audioSource;
+    
+    public void PlaySound(AudioClip clip)
+    {
+        // Fallback: tạo AudioSource nếu chưa có
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();  // ← CẤMI
+        }
+        
+        audioSource.PlayOneShot(clip);
+    }
+}
+
+// ✅ ĐÚNG - Fail fast, require initialization
+public class AudioManager : MonoBehaviour
+{
+    private AudioSource audioSource;
+    
+    private void Awake()
+    {
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            throw new System.NullReferenceException(
+                "AudioSource component not found. Add AudioSource to this GameObject."
+            );
+        }
+    }
+    
+    public void PlaySound(AudioClip clip)
+    {
+        if (audioSource == null)
+        {
+            throw new System.InvalidOperationException("AudioManager not initialized");
+        }
+        
+        audioSource.PlayOneShot(clip);
+    }
+}
+```
+
+### 7. Fallback với Partial Data Processing
+
+```csharp
+// ❌ CẤMI - Fallback: xử lý dữ liệu không đầy đủ
+public class PlayerDataLoader : MonoBehaviour
+{
+    public void LoadPlayerData(PlayerDataDTO dto)
+    {
+        // Fallback: nếu thiếu field, dùng default
+        string playerName = string.IsNullOrEmpty(dto.name) ? "Player" : dto.name;  // ← CẤMI
+        int level = dto.level <= 0 ? 1 : dto.level;  // ← CẤMI
+        float health = dto.health <= 0 ? 100f : dto.health;  // ← CẤMI
+        
+        ApplyPlayerData(playerName, level, health);
+    }
+}
+
+// ✅ ĐÚNG - Fail fast, validate data structure
+public class PlayerDataLoader : MonoBehaviour
+{
+    public void LoadPlayerData(PlayerDataDTO dto)
+    {
+        ValidatePlayerData(dto);
+        ApplyPlayerData(dto.name, dto.level, dto.health);
+    }
+    
+    private void ValidatePlayerData(PlayerDataDTO dto)
+    {
+        if (string.IsNullOrEmpty(dto.name))
+        {
+            throw new System.ArgumentException("Player name cannot be empty");
+        }
+        
+        if (dto.level <= 0)
+        {
+            throw new System.ArgumentException($"Player level must be > 0, got {dto.level}");
+        }
+        
+        if (dto.health <= 0)
+        {
+            throw new System.ArgumentException($"Player health must be > 0, got {dto.health}");
+        }
+    }
+}
+```
+
+---
+
+## ✅ Các mẫu ĐÚNG (Fail Fast Pattern)
+
+### 1. Explicit Validation
+
+```csharp
+// ✅ ĐÚNG - Validate rõ ràng
+public class GameManager : MonoBehaviour
+{
+    public void StartGame(GameConfig config)
+    {
+        // Validate ngay
+        if (config == null)
+            throw new System.ArgumentNullException(nameof(config));
+        
+        if (config.maxPlayers <= 0)
+            throw new System.ArgumentException("maxPlayers must be > 0");
+        
+        if (config.levelData == null)
+            throw new System.ArgumentException("levelData cannot be null");
+        
+        // Nếu tất cả valid, mới thực thi
+        InitializeGame(config);
+    }
+}
+```
+
+### 2. Assertion (Development)
+
+```csharp
+// ✅ ĐÚNG - Assert trong development
+public class InventorySlot : MonoBehaviour
+{
+    public void SetItem(Item item)
+    {
+        System.Diagnostics.Debug.Assert(item != null, "Item cannot be null");
+        System.Diagnostics.Debug.Assert(item.id > 0, "Item ID must be > 0");
+        
+        this.item = item;
+    }
+}
+```
+
+### 3. Precondition Checks
+
+```csharp
+// ✅ ĐÚNG - Kiểm tra precondition
+public class PlayerAttack : MonoBehaviour
+{
+    public void Attack(Enemy target)
+    {
+        // Precondition: target phải valid
+        if (target == null)
+            throw new System.ArgumentNullException(nameof(target));
+        
+        if (!target.IsAlive)
+            throw new System.InvalidOperationException("Cannot attack dead enemy");
+        
+        if (Vector3.Distance(transform.position, target.transform.position) > attackRange)
+            throw new System.InvalidOperationException("Target out of range");
+        
+        // Nếu tất cả precondition pass, thực thi attack
+        ExecuteAttack(target);
+    }
+}
+```
+
+### 4. Guard Clauses
+
+```csharp
+// ✅ ĐÚNG - Guard clauses fail fast
+public class LevelProgression : MonoBehaviour
+{
+    public void CompleteLevel(int levelId)
+    {
+        if (levelId <= 0)
+            throw new System.ArgumentException("Level ID must be > 0");
+        
+        if (!IsLevelUnlocked(levelId))
+            throw new System.InvalidOperationException("Level not unlocked");
+        
+        if (IsLevelAlreadyCompleted(levelId))
+            throw new System.InvalidOperationException("Level already completed");
+        
+        // Tất cả guard pass, mới thực thi
+        MarkLevelAsCompleted(levelId);
+    }
+}
+```
+
+---
+
+## [object Object]uy trình Fix/Add Feature/Refactor (Đúng cách)
+
+### Bước 1: Xác định yêu cầu rõ ràng
+
+```csharp
+// ❌ SAI - Yêu cầu mơ hồ
+// "Thêm tính năng save game"
+
+// ✅ ĐÚNG - Yêu cầu cụ thể
+// "Thêm tính năng save game với yêu cầu:
+//  - Phải có valid player data
+//  - Phải có valid save path
+//  - Phải có permission ghi file
+//  - Nếu thiếu bất kỳ điều kiện nào, throw exception"
+```
+
+### Bước 2: Viết test trước (TDD)
+
+```csharp
+// ✅ ĐÚNG - Test fail fast
+[Test]
+public void SaveGame_WithNullConfig_ThrowsException()
+{
+    // Arrange
+    var saver = new GameSaver();
+    
+    // Act & Assert
+    Assert.Throws<System.ArgumentNullException>(() => saver.SaveGame(null));
+}
+
+[Test]
+public void SaveGame_WithInvalidPath_ThrowsException()
+{
+    // Arrange
+    var saver = new GameSaver();
+    var config = new SaveConfig { path = "" };
+    
+    // Act & Assert
+    Assert.Throws<System.ArgumentException>(() => saver.SaveGame(config));
+}
+```
+
+### Bước 3: Implement với validation
+
+```csharp
+// ✅ ĐÚNG - Implement với validation
+public class GameSaver : MonoBehaviour
+{
+    public void SaveGame(SaveConfig config)
+    {
+        // Validate input
+        if (config == null)
+            throw new System.ArgumentNullException(nameof(config));
+        
+        if (string.IsNullOrEmpty(config.path))
+            throw new System.ArgumentException("Save path cannot be empty");
+        
+        if (!HasWritePermission(config.path))
+            throw new System.UnauthorizedAccessException($"No write permission for {config.path}");
+        
+        // Validate game state
+        if (gameState == null)
+            throw new System.InvalidOperationException("Game state not initialized");
+        
+        // Nếu tất cả valid, mới save
+        PerformSave(config);
+    }
+}
+```
+
+### Bước 4: Test và debug
+
+```csharp
+// ✅ ĐÚNG - Khi test fail, fix root cause
+// Test fail: SaveGame_WithInvalidPath_ThrowsException
+// 
+// Debug: Tìm ra path validation bị thiếu
+// Fix: Thêm validation cho path
+// 
+// Không được: Thêm fallback để path invalid vẫn chạy
+```
+
+---
+
+## 🚨 Checklist khi Add Feature / Fix Bug / Refactor
+
+### Trước khi commit code
+
+- [ ] **Có validation cho tất cả inputs?** Nếu không → Thêm validation
+- [ ] **Có throw exception rõ ràng khi invalid?** Nếu không → Thêm exception
+- [ ] **Có fallback logic nào?** Nếu có → **XÓA NGAY**
+- [ ] **Logic có rõ ràng và dễ hiểu?** Nếu không → Refactor
+- [ ] **Có test case cho error paths?** Nếu không → Thêm test
+- [ ] **Root cause của bug đã được fix?** Nếu không → Tiếp tục debug
+
+### Khi review code
+
+```
+❌ SAI: "Tại sao lại có fallback ở đây?"
+✅ ĐÚNG: "Fallback này che giấu lỗi gì? Hãy fix root cause thay vì thêm fallback."
+```
+
+---
+
+## 📚 Ví dụ thực tế: Refactor Level System
+
+### Tình huống
+
+```
+Yêu cầu: Refactor LevelManager để support dynamic level loading
+Vấn đề hiện tại: Nếu level data missing, game vẫn chạy nhưng logic bị lỗi
+```
+
+### ❌ SAI - Thêm fallback
+
+```csharp
+public class LevelManager : MonoBehaviour
+{
+    public void LoadLevel(int levelId)
+    {
+        LevelData level = levelDatabase.GetLevel(levelId);
+        
+        // ❌ CẤMI - Fallback
+        if (level == null)
+        {
+            Debug.LogWarning($"Level {levelId} not found, using default level");
+            level = CreateDefaultLevel();  // ← Che giấu lỗi
+        }
+        
+        ApplyLevel(level);
+    }
+    
+    private LevelData CreateDefaultLevel()
+    {
+        return new LevelData { id = -1, name = "Default" };
+    }
+}
+```
+
+**Vấn đề**:
+- Che giấu lỗi: Level data missing
+- Logic phức tạp: Phải xử lý default level ở nhiều chỗ
+- Khó debug: Không biết level nào đang chạy
+
+### ✅ ĐÚNG - Fail fast, fix root cause
+
+```csharp
+public class LevelManager : MonoBehaviour
+{
+    public void LoadLevel(int levelId)
+    {
+        // Validate input
+        if (levelId <= 0)
+            throw new System.ArgumentException($"Level ID must be > 0, got {levelId}");
+        
+        // Fail fast nếu level không tồn tại
+        LevelData level = levelDatabase.GetLevel(levelId);
+        if (level == null)
+        {
+            throw new System.InvalidOperationException(
+                $"Level {levelId} not found in database. " +
+                $"Available levels: {string.Join(", ", levelDatabase.GetAvailableLevelIds())}"
+            );
+        }
+        
+        // Validate level data
+        ValidateLevelData(level);
+        
+        // Nếu tất cả valid, mới apply
+        ApplyLevel(level);
+    }
+    
+    private void ValidateLevelData(LevelData level)
+    {
+        if (string.IsNullOrEmpty(level.name))
+            throw new System.ArgumentException($"Level {level.id} has no name");
+        
+        if (level.tiles == null || level.tiles.Length == 0)
+            throw new System.ArgumentException($"Level {level.id} has no tiles");
+        
+        if (level.spawns == null || level.spawns.Length == 0)
+            throw new System.ArgumentException($"Level {level.id} has no spawns");
+    }
+}
+```
+
+**Lợi ích**:
+- Rõ ràng: Biết chính xác lỗi ở đâu
+- Dễ debug: Exception message chi tiết
+- Dễ maintain: Không có fallback logic phức tạp
+- Dễ test: Có thể test error cases
+
+---
+
+## 🔍 Cách phát hiện Fallback Logic
+
+### Pattern cần tìm
+
+```csharp
+// ❌ Dấu hiệu fallback
+if (condition) { /* fallback */ }
+?? default_value
+?. null_coalescing
+try { } catch { /* continue */ }
+|| alternative_value
+condition ? value : default
+```
+
+### Cách kiểm tra
+
+```bash
+# Tìm kiếm fallback patterns
+grep -r "??" Assets/_Game/Scripts/  # Null coalescing
+grep -r "?." Assets/_Game/Scripts/  # Null conditional
+grep -r "||" Assets/_Game/Scripts/  # Logical OR fallback
+grep -r "catch" Assets/_Game/Scripts/  # Silent catch
+```
+
+---
+
+## 📋 Tóm tắt
+
+| Aspect | ❌ SAI (Fallback) | ✅ ĐÚNG (Fail Fast) |
+|--------|---|---|
+| **Input Invalid** | Dùng default | Throw exception |
+| **Data Missing** | Tạo dummy data | Throw exception |
+| **Null Reference** | Lazy init | Fail in Awake |
+| **Error** | Log warning, continue | Throw exception |
+| **Logic** | Phức tạp, khó hiểu | Rõ ràng, dễ debug |
+| **Testing** | Khó test error cases | Dễ test, có assertion |
+
+---
+
+## 🎓 Nguyên tắc vàng
+
+> **"Cứ để nó lỗi rõ ràng, sau đó tìm cách fix gốc rễ. Đừng che giấu lỗi bằng fallback logic."**
+
+### Khi nào được phép fallback?
+
+✅ **Chỉ được fallback ở các vị trí sau:**
+
+1. **Infrastructure layer** (không phải game logic)
+   - Logging system
+   - Asset loading (có fallback asset)
+   - Network retry logic
+   - Cache fallback
+
+2. **UI/UX layer** (không ảnh hưởng gameplay)
+   - Default UI theme
+   - Fallback font
+   - Missing texture placeholder
+
+3. **Editor tools** (không phải runtime game)
+   - Editor utilities
+   - Debug helpers
+   - Development tools
+
+### ❌ TUYỆT ĐỐI CẤMI fallback ở:
+
+- ❌ Game logic (movement, combat, progression)
+- ❌ Data validation (player data, level data)
+- ❌ Core systems (inventory, save/load)
+- ❌ Physics/collision
+- ❌ State management
+
+---
+
+**Lưu ý**: Nguyên tắc này áp dụng cho tất cả code trong `_Game` và `_Features`. Chỉ infrastructure code trong `_Core` có thể có fallback logic được phép.
+
+```

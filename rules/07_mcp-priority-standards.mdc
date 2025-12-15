@@ -1,6 +1,6 @@
 ---
 id: "rule-mcp-priority"
-name: "Ưu tiên sử dụng MCP Tools cho File Operations"
+name: "Ưu tiên sử dụng MCP For Unity Tools"
 description: "Quy tắc ưu tiên sử dụng MCP tools thay vì terminal/manual operations để cải thiện tốc độ"
 version: "1.0.0"
 alwaysApply: true
@@ -20,7 +20,7 @@ references: []
 commands: []
 owners: ["devgo2003"]
 createdAt: "2025-12-05T04:03:21Z"
-updatedAt: "2025-12-05T04:03:21Z"
+updatedAt: "2025-12-15T04:07:07.510Z"
 notes: "Ưu tiên MCP tools để tối ưu hóa tốc độ xử lý"
 language: vi
 ---
@@ -38,7 +38,6 @@ Khi thực hiện các thao tác đọc, tìm kiếm, và chỉnh sửa file, **
 #### ✅ ĐÚNG - Sử dụng MCP tools
 ```
 - read_file: Đọc file từ filesystem
-- mcp0_read_resource: Đọc resource Unity (unity://path/...)
 - mcp0_read_console: Đọc console messages
 ```
 
@@ -65,8 +64,7 @@ run_terminal_cmd("cat Assets/Scripts/PlayerController.cs")
 - grep: Tìm kiếm pattern trong files (ripgrep-based, nhanh)
 - file_search: Tìm kiếm fuzzy filename
 - glob_file_search: Tìm kiếm theo glob pattern
-- mcp0_find_in_file: Tìm kiếm regex trong file cụ thể
-- mcp0_list_resources: Liệt kê resources Unity
+- list_dir: Liệt kê files/folders trong directory
 ```
 
 #### ❌ SAI - Tránh sử dụng
@@ -130,7 +128,7 @@ run_terminal_cmd("sed -i 's/old/new/g' Assets/Scripts/PlayerController.cs")
 #### ✅ ĐÚNG - Sử dụng MCP tools
 ```
 - list_dir: Liệt kê files/folders trong directory
-- mcp0_list_resources: Liệt kê Unity resources
+- mcp0_manage_asset (action: "search"): Tìm kiếm/tra cứu assets
 - glob_file_search: Tìm kiếm theo pattern
 ```
 
@@ -170,7 +168,7 @@ run_terminal_cmd("ls -la Assets/Scripts")
    
 2. Tìm kiếm pattern
    ✅ grep("pattern", path: "Assets/")
-   ✅ mcp0_find_in_file(pattern: "regex", uri: "Assets/...")
+   ✅ grep("regex", path: "Assets/")
    
 3. Chỉnh sửa
    ✅ search_replace(old_string: "...", new_string: "...")
@@ -272,28 +270,63 @@ mcp0_apply_text_edits() // cho việc tìm kiếm
 grep() // cho việc chỉnh sửa
 ```
 
-## Cheat Sheet - MCP Tools thường dùng
+## Cheat Sheet - MCP For Unity Tools (Ưu tiên)
+
+### Built-in Unity MCP Tools (available)
+
+```csharp
+// ===== SCRIPT OPERATIONS =====
+mcp0_manage_script(action: "create|read|delete", ...)
+mcp0_script_apply_edits(name: "...", path: "Assets/...", edits: [...])
+mcp0_apply_text_edits(uri: "Assets/...", edits: [...])
+mcp0_validate_script(uri: "Assets/...")
+
+// ===== GAMEOBJECT OPERATIONS =====
+mcp0_manage_gameobject(action: "create|modify|delete|find|add_component|remove_component", ...)
+
+// ===== ASSET OPERATIONS =====
+mcp0_manage_asset(action: "import|create|modify|delete|search|get_info", ...)
+
+// ===== SCENE OPERATIONS =====
+mcp0_manage_scene(action: "create|load|save|get_hierarchy|get_active", ...)
+
+// ===== PREFAB OPERATIONS =====
+mcp0_manage_prefabs(action: "open_stage|close_stage|save_open_stage|create_from_gameobject", ...)
+
+
+
+// ===== SHADER OPERATIONS =====
+mcp0_manage_shader(action: "create|read|update|delete", ...)
+
+// ===== EDITOR CONTROL =====
+mcp0_manage_editor(action: "play|pause|stop|set_active_tool|add_tag|remove_tag", ...)
+mcp0_execute_menu_item(menu_path: "Window/Inspector")
+
+// ===== CONSOLE =====
+mcp0_read_console(action: "get|clear", ...)
+
+// ===== TESTING =====
+mcp0_run_tests(mode: "EditMode|PlayMode", ...)
+
+```
+
+### File Operations (Thường dùng)
 
 ```csharp
 // Đọc
 read_file(target_file: "path")
-mcp0_read_resource(uri: "unity://path/Assets/...")
 
 // Tìm kiếm
 grep(pattern: "regex", path: "Assets/")
 file_search(query: "filename")
 glob_file_search(glob_pattern: "*.cs")
-mcp0_find_in_file(pattern: "regex", uri: "Assets/...")
 list_dir(target_directory: "Assets/")
 
 // Chỉnh sửa
 search_replace(file_path: "...", old_string: "...", new_string: "...")
 write(file_path: "...", contents: "...")
-mcp0_script_apply_edits(name: "...", edits: [...])
-mcp0_apply_text_edits(uri: "...", edits: [...])
 
 // Validate
-mcp0_validate_script(uri: "Assets/...")
 read_lints(paths: ["Assets/..."])
 ```
 
