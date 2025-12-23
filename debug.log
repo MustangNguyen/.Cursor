@@ -1,0 +1,4 @@
+{"sessionId":"debug-session","runId":"pre-fix-1","hypothesisId":"H2","location":"TutorialBoosterStep.WaitForBoosterButtonClick","message":"Booster selected via button click","data":{"boosterType":2},"timestamp":1766391004602}
+{"sessionId":"debug-session","runId":"pre-fix-1","hypothesisId":"H2","location":"TutorialBoosterStep.WaitForBoosterButtonClick","message":"Booster selected via button click","data":{"boosterType":2},"timestamp":1766394198104}
+{"sessionId":"debug-session","runId":"pre-fix-1","hypothesisId":"H2","location":"TutorialBoosterStep.WaitForBoosterButtonClick","message":"Booster selected via button click","data":{"boosterType":0},"timestamp":1766394387460}
+{"sessionId":"debug-session","runId":"pre-fix-1","hypothesisId":"H2","location":"TutorialBoosterStep.WaitForBoosterButtonClick","message":"Booster selected via button click","data":{"boosterType":1},"timestamp":1766394468902}

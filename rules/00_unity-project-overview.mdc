@@ -67,6 +67,12 @@ Dự án Unity sử dụng kiến trúc component-based với các quy tắc chu
 - Tag format và naming conventions
 - Performance debugging guidelines
 
+### 7. Git Commit Standards (`git-commit-standards.md`)
+- Conventional Commits format
+- Commit types và usage guidelines
+- Best practices cho commit messages
+- Workflow và checklist
+
 ## 🎯 Mục tiêu chung
 - Chuẩn hóa code structure và naming conventions
 - Tối ưu hóa performance và memory usage
@@ -152,6 +158,7 @@ Assets/
 4. Testing: xem `unity-testing-standards.md`
 5. Build và deploy: xem `unity-build-standards.md`
 6. Debug và logging: xem `unity-debug-standards.md`
+7. Git commits: xem `git-commit-standards.md`
 
 ## 🔄 Cập nhật quy tắc
 1. Sửa file rule tương ứng
