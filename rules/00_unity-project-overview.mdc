@@ -2,7 +2,7 @@
 id: "rule-unity-overview"
 name: "Tổng quan dự án Unity"
 description: "Tổng quan kiến trúc, cấu trúc thư mục và quy tắc Unity development"
-version: "1.0.0"
+version: "1.1.0"
 alwaysApply: true
 enabled: true
 priority: 10
@@ -20,7 +20,7 @@ references: []
 commands: []
 owners: ["devgo2003"]
 createdAt: "2025-01-06T00:00:00Z"
-updatedAt: "2025-01-06T00:00:00Z"
+updatedAt: "2025-01-22T00:00:00Z"
 notes: "Luôn nạp để định hướng tổng thể cho Unity development"
 language: vi
 ---
@@ -82,57 +82,83 @@ Dự án Unity sử dụng kiến trúc component-based với các quy tắc chu
 
 ## 🏗️ Cấu trúc Unity Project
 
-### Danh sách thư mục chuẩn
+### Cấu trúc thư mục thực tế
 
-| Thư mục | Mục đích | Quy tắc đặt tên |
-|---------|----------|-----------------|
-| **Scripts/** | C# scripts | PascalCase cho folders |
-| **Art/** | 2D/3D assets | PascalCase cho folders |
-| **Audio/** | Sound files | PascalCase cho folders |
-| **Scenes/** | Unity scenes | PascalCase cho files |
-| **Prefabs/** | Prefab assets | PascalCase cho files |
-| **Resources/** | Runtime assets | PascalCase cho folders |
-| **StreamingAssets/** | Platform assets | PascalCase cho folders |
-
-### Kiến trúc module (đề xuất)
+Dự án sử dụng cấu trúc thư mục với prefix `_` để phân biệt game assets và scripts với các thư mục khác:
 
 ```
 Assets/
-├─ _Core/                 # Hạ tầng chung, feature-agnostic
-│  ├─ DI/                 # ServiceContainer, CompositionRoot
-│  ├─ Events/             # EventBus, event types
-│  ├─ TimeInput/          # TimeService, InputService
-│  ├─ SceneFlow/          # SceneLoader, Transition
-│  ├─ SaveData/           # SaveService, IDataStore
-│  ├─ Tick/               # TickManager, ITickable
-│  ├─ Pooling/            # ObjectPool<T>, AudioPool
-│  ├─ Audio/              # AudioService
-│  ├─ UI/                 # UI stack cơ bản
-│  └─ Utils/              # Extensions, Math, Collections
-├─ _Game/                 # Domain/gameplay cụ thể của dự án
-│  ├─ Scripts/
-│  ├─ Data/
-│  ├─ Prefabs/Scenes/...
-├─ _Features/             # Module tái sử dụng (Shop, Daily, Popup…)
-└─ Plugins/               # Bên thứ 3
+├─ _Game/                 # Game assets chính
+│  ├─ _2D/               # 2D sprites, UI textures
+│  ├─ _3D/               # 3D models, meshes
+│  ├─ _Animation/        # Animation clips, controllers
+│  ├─ _SFX/              # Sound effects, background music
+│  ├─ _VFX/              # Visual effects, particles
+│  ├─ Materials/         # Material assets
+│  ├─ Prefabs/           # Prefab assets (UI, Puzzle, Audio, etc.)
+│  ├─ SO/                # ScriptableObjects (HomeSettings, SaveGameSO, etc.)
+│  ├─ Stage/             # Stage/level data files
+│  ├─ Textures/          # Texture assets
+│  ├─ Tilemap/           # Tilemap palettes và assets
+│  └─ Stylized Grass Shader/  # Shader assets
+├─ _Scripts/             # Scripts chính của game
+│  ├─ Ads/               # Ads controllers, managers
+│  ├─ Audio/             # AudioManager, BackgroundMusicOnly
+│  ├─ Data/              # Data managers, save system, runtime data
+│  ├─ Gift/               # Gift system
+│  ├─ GridControl/       # Grid control logic
+│  ├─ Home/              # Home system (HomeSaveService, Home data)
+│  ├─ Level/             # Level creation và management
+│  ├─ Puzzle/            # Puzzle gameplay logic
+│  ├─ UI/                # UI managers, panels, popups
+│  ├─ Utils/             # Utility classes
+│  ├─ KBTemplates/       # Knowledge base templates
+│  ├─ SimpleZip/         # Zip utilities
+│  └─ SO/                # ScriptableObject scripts
+├─ _Resources/           # Resources cũ (legacy)
+├─ _NewResources/        # Resources mới
+├─ _RoomSort_Ripper/     # Assets từ ripper tool
+├─ Scenes/               # Unity scene files
+├─ Scripts/              # Scripts khác (nếu có)
+├─ Docs/                 # Documentation files
+└─ [Plugins]/            # Third-party plugins (AppsFlyer, Firebase, etc.)
 ```
 
-### Biên giới phụ thuộc
-- `_Core` không phụ thuộc `_Game` hay `_Features`.
-- `_Features` chỉ phụ thuộc `_Core` (không phụ thuộc `_Game`).
-- `_Game` có thể dùng `_Core` và `_Features`.
+### Chi tiết thư mục chính
+
+#### `Assets/_Game/`
+Chứa tất cả game assets được tổ chức theo loại:
+- **Art assets**: `_2D/`, `_3D/` cho sprites và models
+- **Media**: `_Animation/`, `_SFX/`, `_VFX/` cho animations, sounds, effects
+- **Game objects**: `Prefabs/` cho các prefab được sử dụng trong game
+- **Data**: `SO/` cho ScriptableObjects, `Stage/` cho level data
+- **Rendering**: `Materials/`, `Textures/`, `Tilemap/` cho materials và textures
+
+#### `Assets/_Scripts/`
+Chứa tất cả C# scripts được tổ chức theo module/feature:
+- **Core systems**: `Data/`, `Audio/`, `UI/`, `Utils/`
+- **Gameplay**: `Home/`, `Puzzle/`, `Level/`, `GridControl/`
+- **Features**: `Ads/`, `Gift/`
+- **Tools**: `KBTemplates/`, `SimpleZip/`
+
+### Quy tắc tổ chức
+
+1. **Prefix `_`**: Thư mục game assets và scripts dùng prefix `_` để dễ phân biệt
+2. **Phân loại theo loại asset**: Assets được tổ chức theo loại (2D, 3D, Audio, etc.) thay vì theo feature
+3. **Scripts theo module**: Scripts được tổ chức theo module/feature để dễ tìm và maintain
+4. **Legacy folders**: `_Resources/`, `_NewResources/` là legacy, tránh tạo mới trong đó
 
 ### Assembly Definitions (asmdef)
-- Tạo: `_Core/_Core.asmdef`, `_Features/_Features.asmdef`, `_Game/_Game.asmdef`.
-- Mỗi module con (vd `Events`, `Tick`) có thể có asmdef riêng nếu cần isolation.
-- Rule tham chiếu: `_Game` → `_Core`, `_Features`; `_Features` → `_Core`; `_Core` → không tham chiếu module khác.
+- Có thể tạo asmdef cho `_Scripts` nếu cần isolation
+- Mỗi module trong `_Scripts/` có thể có asmdef riêng nếu cần
+- Rule tham chiếu: Scripts trong `_Scripts/` có thể tham chiếu lẫn nhau, nhưng nên tránh circular dependencies
 
-### Checklist migration khỏi Service Locator
-1. Khoanh vùng nơi gọi global (vd `Core.GameManager`).
-2. Tạo `CompositionRoot` đăng ký services qua `ServiceContainer`.
-3. Tiêm dependencies qua constructor/serialized reference thay vì truy cập global.
-4. Di chuyển Update rải rác sang `TickManager` tập trung.
-5. Viết test smoke, gỡ dần usage cũ rồi xóa hẳn global.
+### Checklist refactoring code
+1. Khoanh vùng nơi gọi global/singleton (vd `GameManager.Instance`, `DataManager.Instance`).
+2. Xem xét tạo service container nếu cần dependency injection.
+3. Tiêm dependencies qua constructor/serialized reference thay vì truy cập global khi có thể.
+4. Di chuyển Update rải rác sang centralized update system nếu cần.
+5. Viết test smoke, gỡ dần usage cũ rồi xóa hẳn global nếu không cần thiết.
 
 ### Quy tắc đặt tên
 
