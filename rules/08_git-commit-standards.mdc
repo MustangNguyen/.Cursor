@@ -37,7 +37,8 @@ language: vi
 
 ### Quy tắc chung
 
-- **Commit message ngắn gọn**: Khoảng 100 ký tự cho dòng đầu tiên
+- **Commit message bằng tiếng Việt**: Tất cả commit messages phải viết bằng tiếng Việt (không dùng tiếng Anh)
+- **Commit message ngắn gọn**: Khoảng 80 ký tự cho dòng đầu tiên
 - **Type là bắt buộc**: Mỗi commit chỉ có một type
 - **Chi tiết trong body**: Nếu cần mô tả chi tiết, thêm vào phần body (sau dòng trống)
 - **Tách commit lớn**: Nếu không biết chọn type nào, có thể cần tách thành nhiều commit nhỏ hơn
@@ -59,7 +60,7 @@ Chỉ ra việc phát triển tính năng mới cho dự án.
 **Ví dụ:**
 ```
 feat: thêm AudioService với pooling support
-feat: implement TickManager cho centralized updates
+feat: thêm TickManager cho centralized updates
 feat: thêm shop system với currency management
 ```
 
@@ -69,8 +70,8 @@ Sử dụng khi refactor code mà không thay đổi logic/hành vi của hệ t
 **Ví dụ:**
 ```
 refactor: tách PlayerController thành Movement và Input handlers
-refactor: migrate từ Service Locator sang DI pattern
-refactor: cleanup unused methods trong GameManager
+refactor: chuyển từ Service Locator sang DI pattern
+refactor: xóa unused methods trong GameManager
 ```
 
 ### style
@@ -78,8 +79,8 @@ Sử dụng khi có thay đổi về format/style mà không ảnh hưởng logi
 
 **Ví dụ:**
 ```
-style: fix indentation trong PlayerController
-style: remove trailing whitespaces
+style: sửa indentation trong PlayerController
+style: xóa trailing whitespaces
 style: format code theo coding standards
 ```
 
@@ -89,8 +90,8 @@ Sử dụng khi sửa lỗi/bug trong hệ thống.
 **Ví dụ:**
 ```
 fix: sửa null reference trong InventorySystem.AddItem
-fix: correct memory leak trong AudioPool
-fix: resolve player không jump được khi grounded
+fix: sửa memory leak trong AudioPool
+fix: sửa player không jump được khi grounded
 ```
 
 ### chore
@@ -98,9 +99,9 @@ Chỉ ra thay đổi trong dự án không ảnh hưởng đến code test hoặ
 
 **Ví dụ:**
 ```
-chore: update .gitignore để exclude temp files
+chore: cập nhật .gitignore để exclude temp files
 chore: thêm editor scripts cho asset organization
-chore: update Unity version trong project settings
+chore: cập nhật Unity version trong project settings
 ```
 
 ### docs
@@ -108,9 +109,9 @@ Sử dụng khi có thay đổi trong documentation.
 
 **Ví dụ:**
 ```
-docs: update README với setup instructions
+docs: cập nhật README với setup instructions
 docs: thêm comments cho PlayerController methods
-docs: update API documentation cho EventBus
+docs: cập nhật API documentation cho EventBus
 ```
 
 ### build
@@ -118,9 +119,9 @@ Sử dụng khi có thay đổi ảnh hưởng đến build process hoặc depen
 
 **Ví dụ:**
 ```
-build: update Unity version lên 2022.3 LTS
+build: cập nhật Unity version lên 2022.3 LTS
 build: thêm assembly definitions cho module isolation
-build: configure build settings cho Android platform
+build: cấu hình build settings cho Android platform
 ```
 
 ### perf
@@ -128,8 +129,8 @@ Chỉ ra thay đổi cải thiện performance.
 
 **Ví dụ:**
 ```
-perf: optimize Update loop bằng TickManager
-perf: implement object pooling cho bullets
+perf: tối ưu Update loop bằng TickManager
+perf: thêm object pooling cho bullets
 perf: cache component references thay vì GetComponent mỗi frame
 ```
 
@@ -139,8 +140,8 @@ Sử dụng cho thay đổi trong CI configuration files.
 **Ví dụ:**
 ```
 ci: thêm GitHub Actions workflow cho automated testing
-ci: update build pipeline với Unity Cloud Build
-ci: configure code coverage reporting
+ci: cập nhật build pipeline với Unity Cloud Build
+ci: cấu hình code coverage reporting
 ```
 
 ### revert
@@ -188,18 +189,18 @@ refactor: tách AudioService thành interface và implementation
 
 ### Commit có body (chi tiết)
 ```
-feat: implement TickManager cho centralized updates
+feat: thêm TickManager cho centralized updates
 
 - Tạo ITickable interface
-- Implement TickManager với List<ITickable>
-- Migrate PlayerController và EnemyAI sang ITickable
+- Thêm TickManager với List<ITickable>
+- Chuyển PlayerController và EnemyAI sang ITickable
 - Giảm số lượng Update() methods từ 15 xuống 1
 
 Closes #123
 ```
 
 ```
-fix: resolve memory leak trong AudioPool
+fix: sửa memory leak trong AudioPool
 
 Vấn đề: AudioSource objects không được return về pool sau khi play xong.
 Giải pháp: Thêm coroutine để tự động return sau khi clip finish.
@@ -252,20 +253,34 @@ feat: thêm PlayerController với movement, jump và tests
 
 ### 5. Reference issues/PRs trong body
 ```
-feat: implement shop system
+feat: thêm shop system
 
 - Thêm ShopService với currency management
 - Tạo UI prefabs cho shop interface
-- Integrate với existing inventory system
+- Tích hợp với existing inventory system
 
 Closes #789
 Related to #456
 ```
 
+### 6. Sử dụng tiếng Việt cho commit messages
+```
+✅ ĐÚNG
+feat: thêm AudioService
+fix: sửa null reference
+refactor: tách PlayerController thành các components
+
+❌ SAI
+feat: add AudioService
+fix: fix null reference
+refactor: split PlayerController into components
+```
+
 ## Checklist trước khi commit
 
 - [ ] Type đã được chọn đúng
-- [ ] Commit message ngắn gọn (< 100 ký tự cho dòng đầu)
+- [ ] Commit message bằng tiếng Việt
+- [ ] Commit message ngắn gọn (< 80 ký tự cho dòng đầu)
 - [ ] Một commit chỉ thực hiện một thay đổi
 - [ ] Đã test code trước khi commit
 - [ ] Không có debug code hoặc console.logs thừa
