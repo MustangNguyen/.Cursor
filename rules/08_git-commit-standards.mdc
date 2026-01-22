@@ -38,7 +38,7 @@ language: vi
 ### Quy tắc chung
 
 - **Commit message bằng tiếng Việt**: Tất cả commit messages phải viết bằng tiếng Việt (không dùng tiếng Anh)
-- **Commit message ngắn gọn**: Khoảng 80 ký tự cho dòng đầu tiên
+- **Commit message ngắn gọn**: Khoảng 50 ký tự cho dòng đầu tiên
 - **Type là bắt buộc**: Mỗi commit chỉ có một type
 - **Chi tiết trong body**: Nếu cần mô tả chi tiết, thêm vào phần body (sau dòng trống)
 - **Tách commit lớn**: Nếu không biết chọn type nào, có thể cần tách thành nhiều commit nhỏ hơn
