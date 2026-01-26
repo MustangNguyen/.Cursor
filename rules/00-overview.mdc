@@ -1,0 +1,78 @@
+---
+id: unity-overview
+alwaysApply: true
+priority: 10
+---
+
+# Unity Project Overview
+
+Dự án Unity với kiến trúc component-based, DI pattern, và centralized systems.
+
+## Cấu trúc thư mục
+
+```
+Assets/
+├─ _Game/             # Game assets (prefix _ để dễ phân biệt)
+│  ├─ _2D/           # Sprites, UI textures
+│  ├─ _3D/           # Models, meshes
+│  ├─ _Animation/    # Animation clips
+│  ├─ _SFX/          # Audio
+│  ├─ _VFX/          # Visual effects
+│  ├─ Prefabs/       # Prefabs
+│  └─ SO/            # ScriptableObjects
+├─ _Scripts/         # C# scripts
+│  ├─ Ads/           # Ads system
+│  ├─ Audio/         # Audio manager
+│  ├─ Data/          # Data management
+│  ├─ Home/          # Home system
+│  ├─ Level/         # Level management
+│  ├─ Puzzle/        # Puzzle gameplay
+│  ├─ UI/            # UI managers
+│  └─ Utils/         # Utilities
+└─ Scenes/           # Unity scenes
+```
+
+## Naming Conventions
+
+**C# Scripts:**
+- Classes: `PascalCase` (PlayerController, GameManager)
+- Methods: `PascalCase` (MovePlayer, UpdateHealth)
+- Fields (SerializeField): `camelCase` (moveSpeed, isGrounded)
+- Fields (private): `m_camelCase` (m_isGrounded, m_health)
+- Constants: `UPPER_CASE` (MAX_HEALTH, DEFAULT_SPEED)
+
+**Assets:**
+- Scenes: `PascalCase` (MainMenu, GameLevel01)
+- Prefabs: `PascalCase` (Player, Enemy_Spider)
+- Textures/Audio: `snake_case` (player_idle, jump_sound)
+
+## Kiến trúc
+
+### DI & Service Container
+- Dùng DI qua `CompositionRoot` + interfaces
+- Không dùng Service Locator/global trong gameplay code
+- Interface ≤ 5 methods (Interface Segregation)
+
+### Centralized Update
+- Implement `ITickable` và đăng ký vào `TickManager`
+- Giảm số `Update()` rải rác
+
+### Event System
+- Dùng event cho cross-module broadcast/low-frequency
+- Ưu tiên gọi hàm trực tiếp khi có thể
+- Đăng ký trong `OnEnable`, hủy trong `OnDisable`
+
+### State Machine
+- Entity có nhiều trạng thái phải dùng State Machine
+- Tránh `switch` lồng > 2 cấp
+
+### Domain Separation
+- `_Core`: Interfaces hạ tầng (Time, Input, Scene, Save, Event, Tick, Pooling)
+- `_Game`: Logic gameplay và domain entities
+
+---
+
+**Các rule chi tiết:**
+- Scripts: `01-scripts.mdc`
+- Assets/Performance: `02-assets-performance.mdc`
+- Workflow (Debug, Git, MCP, Comments): `03-workflow.mdc`

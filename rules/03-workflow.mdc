@@ -1,0 +1,218 @@
+---
+id: unity-workflow
+alwaysApply: true
+priority: 25
+---
+
+# Unity Development Workflow
+
+## 🐛 Debug System
+
+**IDebugLogger Interface:**
+```csharp
+public interface IDebugLogger {
+    void Log(string tag, string message);
+    void LogWarning(string tag, string message);
+    void LogError(string tag, string message);
+    void LogIf(bool condition, string tag, string message);
+}
+```
+
+**Implementation:**
+```csharp
+public class DebugLogger : IDebugLogger {
+    public void Log(string tag, string msg) {
+#if ENABLE_DEBUG_LOGS
+        Debug.Log($"[{tag}] {msg}");
+#endif
+    }
+    // ... other methods
+}
+```
+
+**Usage:**
+```csharp
+private IDebugLogger logger;
+private const string TAG = "[PlayerController]";
+
+void Awake() {
+    logger = ServiceContainer.Resolve<IDebugLogger>();
+}
+
+void Jump() {
+    logger.Log(TAG, $"Jumping with force: {jumpForce}");
+}
+```
+
+**Tag format:** `[ClassName]` hoặc `[Module.ClassName]`
+
+**Define symbols:** `ENABLE_DEBUG_LOGS` (Dev), không có (Prod)
+
+## 🔧 MCP Tools Priority
+
+**Luôn ưu tiên MCP tools thay vì terminal commands.**
+
+### File Operations
+
+| Task | MCP Tool | Terminal | Priority |
+|---|---|---|---|
+| Read | `read_file` | `cat` | ⭐⭐⭐⭐⭐ |
+| Search | `grep` | `grep/rg` | ⭐⭐⭐⭐⭐ |
+| Replace | `search_replace` | `sed` | ⭐⭐⭐⭐⭐ |
+| Edit C# | `mcp0_script_apply_edits` | Manual | ⭐⭐⭐⭐⭐ |
+| List | `list_dir` | `ls` | ⭐⭐⭐⭐⭐ |
+
+### Unity MCP Tools
+
+```csharp
+// Script operations
+mcp0_manage_script(action: "create|read|delete", ...)
+mcp0_script_apply_edits(name, path, edits: [...])
+mcp0_validate_script(uri: "Assets/...")
+
+// GameObject operations
+mcp0_manage_gameobject(action: "create|modify|delete|find", ...)
+
+// Asset operations
+mcp0_manage_asset(action: "import|create|search", ...)
+
+// Scene operations
+mcp0_manage_scene(action: "create|load|save|get_hierarchy", ...)
+
+// Editor control
+mcp0_manage_editor(action: "play|pause|stop", ...)
+mcp0_execute_menu_item(menu_path: "Window/Inspector")
+
+// Console
+mcp0_read_console(action: "get|clear", ...)
+
+// Testing
+mcp0_run_tests(mode: "EditMode|PlayMode", ...)
+```
+
+**Workflow:**
+```
+1. Read: read_file("path/to/file.cs")
+2. Search: grep("pattern", path: "Assets/")
+3. Edit: mcp0_script_apply_edits(edits: [...])
+4. Verify: read_file + mcp0_validate_script
+```
+
+**Khi dùng terminal:** Git ops, build commands, package management.
+
+## 📝 Git Commits
+
+**Format:** `<type>: <description>`
+
+**Types:**
+- `feat`: Tính năng mới
+- `fix`: Sửa bug
+- `refactor`: Refactor code (không đổi logic)
+- `perf`: Tối ưu performance
+- `style`: Format/style
+- `test`: Test code
+- `docs`: Documentation
+- `build`: Build/dependencies
+- `chore`: Chores (gitignore, editor config)
+
+**Quy tắc:**
+- Bằng tiếng Việt
+- Ngắn gọn (< 80 chars)
+- Present tense
+- Một commit = một thay đổi
+
+**Ví dụ:**
+```
+feat: thêm AudioService với pooling support
+fix: sửa null reference trong InventorySystem.AddItem
+refactor: tách PlayerController thành Movement và Input
+perf: cache component references thay vì GetComponent
+```
+
+**Với body:**
+```
+feat: thêm TickManager cho centralized updates
+
+- Tạo ITickable interface
+- Thêm TickManager với List<ITickable>
+- Chuyển PlayerController và EnemyAI sang ITickable
+
+Closes #123
+```
+
+## 💬 Better Comments
+
+**Tags:**
+- `!` - Cảnh báo/Quan trọng (đỏ)
+- `?` - Câu hỏi/Cần làm rõ (xanh dương)
+- `//` - Code đã xóa/Deprecated (xám, gạch ngang)
+- `todo` - TODO (cam)
+- `*` - Highlight/Quan trọng (xanh lá)
+- `^` - Bug fix/Improvement (vàng)
+
+**Ví dụ:**
+```csharp
+public void Jump() {
+    // ! QUAN TRỌNG: Chỉ jump khi grounded để tránh double jump
+    if (m_isGrounded) {
+        // * Sử dụng ForceMode.Impulse cho jump tự nhiên hơn
+        rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+    } else {
+        // ? Có nên thêm feedback khi không thể jump?
+    }
+}
+
+private void HandleInput() {
+    // todo: Thêm input validation
+    // todo: Support gamepad input
+    
+    // // Code cũ - đã thay thế bằng MovePosition
+    // transform.position += movement * speed * Time.deltaTime;
+    
+    // ^ FIX: MovePosition thay vì transform.position để physics chính xác
+    rb.MovePosition(transform.position + movement * speed * Time.deltaTime);
+}
+```
+
+**Best practice:** Comment giải thích "TẠI SAO", không phải "CÁI GÌ".
+
+## 🧪 Testing
+
+**Phạm vi bắt buộc:**
+- Unit test: Core logic (movement, validators, calculators)
+- Integration test: Scene bootstrap, service registration
+- Performance test: Tick logic ≤ 0.05ms @ 60 FPS (PC mid)
+
+**Nguyên tắc:**
+- Mock interfaces (`ITimeService`, `IInputService`), không mock `MonoBehaviour`
+- Pure logic tách khỏi `MonoBehaviour`
+- Test data trong `Assets/_Game/Data/Test`
+
+**Ví dụ:**
+```csharp
+[Test]
+public void Tick_Should_Advance_Position_Without_Alloc() {
+    var time = new FakeTimeService(1f/60f);
+    var sut = new MovementSystem(time);
+    sut.Tick(time.DeltaTime);
+    Assert.That(sut.Position, Is.Not.EqualTo(Vector3.zero));
+}
+```
+
+## 🏗️ Build & CI
+
+**CI Pipeline:**
+1. Code formatting/lint
+2. Unit tests + playmode smoke scene
+3. Addressables build (nếu dùng)
+4. Build dev cho target chính
+5. Xuất size report và dependency graph
+
+**Versioning:**
+- SemVer, embed build number vào `PlayerSettings.bundleVersion`
+- Define symbols: `DEV_LOGS` (dev), `STAGING`, `PROD`
+
+**Nightly profiling:**
+- Chạy benchmark headless
+- Log: Update ms, GC alloc, draw calls
+- Lưu artifacts để track trend

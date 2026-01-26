@@ -1,0 +1,208 @@
+---
+id: unity-assets-performance
+alwaysApply: true
+priority: 30
+---
+
+# Unity Assets & Performance
+
+## Asset Import Settings
+
+### Textures
+
+| Loại | Format | Max Size | Compression | Mip Maps |
+|---|---|---|---|---|
+| UI Sprites | RGBA32 | 1024 | High | ❌ |
+| 3D Textures | RGBA32 | 2048 | Medium | ✅ |
+| Icons | RGBA32 | 256 | High | ❌ |
+
+**Naming:** `snake_case` (ui_button_normal, player_idle_01, icon_health)
+
+### Models
+
+| Loại | Polygons | LOD | Collider |
+|---|---|---|---|
+| Character | 5k-15k | 3 | ✅ |
+| Enemy | 2k-8k | 2 | ✅ |
+| Props | 100-1k | 1 | ✅ |
+
+**Naming:** `PascalCase` with prefix (char_player_01, env_tree_oak, weapon_sword)
+
+### Audio
+
+| Loại | Format | Quality | Load Type |
+|---|---|---|---|
+| Music | Vorbis | 70% | Streaming |
+| SFX | Vorbis | 50% | Compressed In Memory |
+| Voice | Vorbis | 60% | Compressed In Memory |
+| UI | Vorbis | 40% | Compressed In Memory |
+
+**Naming:** `snake_case` (music_main_theme, sfx_jump_01, voice_player_hurt)
+
+## Asset Organization
+
+```
+_Game/
+├─ _2D/              # 2D sprites
+├─ _3D/              # 3D models
+├─ _Animation/       # Animations
+├─ _SFX/             # Audio
+├─ _VFX/             # Effects
+├─ Materials/        # Materials
+├─ Prefabs/          # Prefabs
+│  ├─ Characters/
+│  ├─ Environment/
+│  ├─ UI/
+│  └─ Weapons/
+├─ SO/               # ScriptableObjects
+└─ Textures/         # Textures
+```
+
+## Performance Targets
+
+### Frame Rate
+
+| Platform | Target | Min | Budget |
+|---|---|---|---|
+| PC Mid | 60 FPS | 30 FPS | < 6ms |
+| Mobile Mid | 30 FPS | 20 FPS | < 12ms |
+| VR | 90 FPS | 72 FPS | < 3ms |
+
+### Draw Calls
+- Mobile: < 120 draw calls, < 200 batches
+- PC: < 200 draw calls, < 300 batches
+
+### Memory
+- GC alloc per frame = 0 trong gameplay
+- Dùng object pooling, StringBuilder
+
+## CPU Optimization
+
+**Centralized Tick:**
+```csharp
+public interface ITickable { void Tick(float dt); }
+
+public class TickManager : MonoBehaviour {
+    private List<ITickable> tickables = new List<ITickable>(64);
+    
+    void Update() {
+        float dt = Time.deltaTime;
+        for (int i = 0; i < tickables.Count; i++)
+            tickables[i].Tick(dt);
+    }
+    
+    public void Add(ITickable t) => tickables.Add(t);
+    public void Remove(ITickable t) => tickables.Remove(t);
+}
+```
+
+**Coroutine với flags:**
+```csharp
+private bool m_isProcessing;
+
+void Update() {
+    if (Input.GetKeyDown(KeyCode.Space) && !m_isProcessing)
+        StartCoroutine(Process());
+}
+
+IEnumerator Process() {
+    m_isProcessing = true;
+    yield return new WaitForSeconds(1f);
+    // Do work
+    m_isProcessing = false;
+}
+```
+
+## Memory Optimization
+
+**String Builder:**
+```csharp
+private StringBuilder m_sb = new StringBuilder();
+
+void Update() {
+    m_sb.Clear();
+    m_sb.Append("Score: ").Append(score);
+    m_sb.Append(" Time: ").Append(time);
+    uiText.text = m_sb.ToString();
+}
+```
+
+**List pre-allocation:**
+```csharp
+private List<Enemy> m_enemies = new List<Enemy>(100);
+
+void Update() {
+    m_enemies.Clear();
+    GetComponentsInChildren(m_enemies);  // Reuse list
+}
+```
+
+## Graphics Optimization
+
+**Canvas separation:**
+- Tách Canvas theo tần suất thay đổi (HUD, Popups, WorldSpace)
+- Dùng atlas cho UI
+- Hạn chế material variants
+
+**LOD System:**
+```csharp
+void Update() {
+    float dist = Vector3.Distance(transform.position, player.position);
+    
+    if (dist < 10f) SetLOD(0);       // High
+    else if (dist < 25f) SetLOD(1);  // Medium
+    else if (dist < 50f) SetLOD(2);  // Low
+    else SetLOD(3);                   // Culled
+}
+```
+
+## Audio Pooling
+
+```csharp
+public class AudioPool : MonoBehaviour {
+    private Queue<AudioSource> pool = new Queue<AudioSource>();
+    
+    public void PlaySound(AudioClip clip, Vector3 pos) {
+        AudioSource source = GetSource();
+        source.transform.position = pos;
+        source.PlayOneShot(clip);
+        StartCoroutine(ReturnAfterPlay(source, clip.length));
+    }
+    
+    AudioSource GetSource() {
+        if (pool.Count > 0) {
+            var s = pool.Dequeue();
+            s.gameObject.SetActive(true);
+            return s;
+        }
+        return Instantiate(prefab);
+    }
+    
+    IEnumerator ReturnAfterPlay(AudioSource s, float delay) {
+        yield return new WaitForSeconds(delay);
+        s.gameObject.SetActive(false);
+        pool.Enqueue(s);
+    }
+}
+```
+
+## Data-driven Levels
+
+```csharp
+[CreateAssetMenu(menuName="Game/LevelData")]
+public class LevelData : ScriptableObject {
+    public Vector2Int gridSize;
+    public TileData[] tiles;
+    public SpawnData[] spawns;
+    public GoalData[] goals;
+}
+```
+
+Lưu trong `Assets/_Game/Data/Levels/`, có `LevelValidator` trong Editor.
+
+## Best Practices
+
+1. **Profiling**: Dùng Unity Profiler thường xuyên, test trên target devices
+2. **Optimization**: Optimize bottlenecks trước, measure before/after
+3. **Code**: Tránh expensive ops trong Update, cache references
+4. **Assets**: Texture atlases, LOD, pooling, async loading

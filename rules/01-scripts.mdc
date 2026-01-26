@@ -1,0 +1,199 @@
+---
+id: unity-scripts
+alwaysApply: true
+priority: 20
+globs: ["**/*.cs"]
+---
+
+# Unity C# Scripts Standards
+
+## Cấu trúc script
+
+```csharp
+using UnityEngine;
+
+namespace BeautyScrewJam.Core
+{
+    public class PlayerController : MonoBehaviour
+    {
+        #region Fields
+        [Header("Movement")]
+        [SerializeField] private float moveSpeed = 5f;
+        
+        private bool m_isGrounded;  // m_ prefix cho private non-serialized
+        #endregion
+
+        #region Unity Lifecycle
+        private void Awake() { /* Init components */ }
+        private void Start() { /* Setup state */ }
+        private void Update() { /* Input */ }
+        private void FixedUpdate() { /* Physics */ }
+        #endregion
+
+        #region Public Methods
+        public void Jump() { /* ... */ }
+        #endregion
+
+        #region Private Methods
+        private void HandleInput() { /* ... */ }
+        #endregion
+    }
+}
+```
+
+## Quy tắc đặt tên
+
+- **Classes/Interfaces**: `PascalCase`, `IPascalCase`
+- **Methods**: `PascalCase` (public & private)
+- **Properties**: `PascalCase`
+- **Fields (SerializeField)**: `camelCase`
+- **Fields (private)**: `m_camelCase`
+- **Constants**: `UPPER_CASE`
+- **Local vars**: `camelCase`
+
+## Performance
+
+**Cache references:**
+```csharp
+// ❌ Tìm mỗi frame
+void Update() {
+    GameObject.Find("Player").DoSomething();
+}
+
+// ✅ Cache trong Start
+private GameObject m_player;
+void Start() { m_player = GameObject.Find("Player"); }
+void Update() { m_player.DoSomething(); }
+```
+
+**Reuse objects:**
+```csharp
+// ❌ Tạo mới mỗi frame
+void Update() {
+    Vector3 pos = new Vector3(1, 2, 3);
+}
+
+// ✅ Reuse
+private Vector3 m_pos = new Vector3();
+void Update() {
+    m_pos.Set(1, 2, 3);
+}
+```
+
+**Object Pooling:**
+```csharp
+public class ObjectPool : MonoBehaviour {
+    private Queue<GameObject> pool = new Queue<GameObject>();
+    
+    public GameObject Get() {
+        if (pool.Count > 0) {
+            var obj = pool.Dequeue();
+            obj.SetActive(true);
+            return obj;
+        }
+        return Instantiate(prefab);
+    }
+    
+    public void Return(GameObject obj) {
+        obj.SetActive(false);
+        pool.Enqueue(obj);
+    }
+}
+```
+
+## NO FALLBACK - Quy tắc vàng
+
+**TUYỆT ĐỐI KHÔNG thêm fallback logic khi fix bug/add feature/refactor.**
+
+### ❌ CẤMI Fallback
+
+```csharp
+// ❌ Fallback với default value
+public void SetLevel(int level) {
+    m_level = level > 0 ? level : 1;  // Che giấu lỗi!
+}
+
+// ❌ Fallback với null coalescing
+public Item GetItem(int id) {
+    return database?.Get(id) ?? CreateDefault();  // Che giấu lỗi!
+}
+
+// ❌ Silent catch
+try { SaveGame(); }
+catch { Debug.Log("Save failed"); }  // Che giấu lỗi!
+
+// ❌ Lazy init fallback
+public void Play(AudioClip clip) {
+    if (audioSource == null)
+        audioSource = gameObject.AddComponent<AudioSource>();  // Che giấu lỗi!
+}
+```
+
+### ✅ ĐÚNG - Fail Fast
+
+```csharp
+// ✅ Validate input
+public void SetLevel(int level) {
+    if (level <= 0)
+        throw new ArgumentException($"Level must be > 0, got {level}");
+    m_level = level;
+}
+
+// ✅ Validate state
+public Item GetItem(int id) {
+    if (database == null)
+        throw new NullReferenceException("Database not initialized");
+    Item item = database.Get(id);
+    if (item == null)
+        throw new InvalidOperationException($"Item {id} not found");
+    return item;
+}
+
+// ✅ Throw exception
+try { SaveGame(); }
+catch (IOException ex) {
+    throw new InvalidOperationException("Failed to save", ex);
+}
+
+// ✅ Validate in Awake
+private void Awake() {
+    audioSource = GetComponent<AudioSource>();
+    if (audioSource == null)
+        throw new InvalidOperationException("AudioSource required");
+}
+```
+
+### Tại sao không dùng fallback?
+
+1. **Che giấu lỗi** → Khó debug
+2. **Logic phức tạp** → Khó maintain
+3. **Dữ liệu không nhất quán** → Gây lỗi cascade
+4. **Khó tìm root cause** → Mất thời gian
+
+### Khi nào được phép fallback?
+
+✅ **Chỉ được phép trong:**
+- Infrastructure layer (logging, cache)
+- UI/UX layer (default theme, missing texture)
+- Editor tools
+
+❌ **CẤMI trong:**
+- Game logic (movement, combat, progression)
+- Data validation
+- Core systems (inventory, save/load)
+
+## Checklist trước khi refactor
+
+- [ ] Kiểm tra usage (IDE search, code map)
+- [ ] Cảnh báo side effects
+- [ ] Xóa bỏ code cũ hoàn toàn (không giữ "backup")
+- [ ] Refactor toàn bộ call sites (không backward compatibility)
+- [ ] Viết/update tests
+
+## Best Practices
+
+1. **Null checks**: Validate trong `Awake`/`Start`
+2. **Component caching**: Cache trong `Awake`
+3. **Event unsubscribe**: Trong `OnDestroy`
+4. **Coroutines**: Dùng flags để tránh duplicate
+5. **No fallback**: Fail fast, throw exception rõ ràng
